@@ -2,13 +2,11 @@ from rest_framework import serializers
 from toys.models import Toy
 
 
-class ToySerializer(serializers.Serializer):
-    pk = serializers.IntegerField(read_only=True)
-    name = serializers.CharField(max_length=150)
-    description = serializers.CharField(max_length=250)
-    release_date = serializers.DateTimeField()
-    toy_category = serializers.CharField(max_length=200)
-    was_included_in_home = serializers.BooleanField(required=False)
+class ToySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Toy
+        fields = ('id', 'name', 'description', 'release_date',
+                  'toy_category', 'was_included_in_home')
 
     def create(self, validated_data):
         return Toy.objects.create(**validated_data)
