@@ -5,8 +5,8 @@
 #     path('admin/', admin.site.urls),
 # ]
 
-from django.conf.urls import url, include
+from django.urls import path, include
 
 urlpatterns = [
-    url(r'^', include('toys.urls'))
+    path('', include('drones.urls'))
 ]
