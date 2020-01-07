@@ -1,10 +1,14 @@
 from django.shortcuts import render
-from rest_framework import generics
+from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.throttling import ScopedRateThrottle
 from django_filters import FilterSet
 from django_filters import AllValuesFilter, DateTimeFilter, NumberFilter
 from drones.models import Drone, DroneCategory, Pilot, Competition
+from drones import custompermission
 from drones.serializers import DroneCategorySerializer, DroneSerializer, PilotSerializer, PilotCompetitionSerializer
 
 
@@ -36,6 +40,8 @@ class DroneCategoryDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class DroneList(generics.ListCreateAPIView):
+    throttle_scope = 'drones'
+    throttle_classes = (ScopedRateThrottle,)
     queryset = Drone.objects.all()
     serializer_class = DroneSerializer
     name = 'drone-list'
@@ -43,27 +49,48 @@ class DroneList(generics.ListCreateAPIView):
                      'manufacturing_date', 'has_it_competed')
     search_fields = ('^name',)
     ordering_fields = ('name', 'manufacturing_date')
+    permission_classes = (
+        permissions.IsAuthenticatedOrReadOnly,
+        custompermission.isCurrentUserOwnerOrReadOnly
+    )
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class DroneDetail(generics.RetrieveUpdateDestroyAPIView):
+    throttle_scope = 'drones'
+    throttle_classes = (ScopedRateThrottle,)
     queryset = Drone.objects.all()
     serializer_class = DroneSerializer
     name = 'drone-detail'
+    permission_classes = (
+        permissions.IsAuthenticatedOrReadOnly,
+        custompermission.isCurrentUserOwnerOrReadOnly
+    )
 
 
 class PilotList(generics.ListCreateAPIView):
+    throttle_scope = 'pilots'
+    throttle_classes = (ScopedRateThrottle,)
     queryset = Pilot.objects.all()
     serializer_class = PilotSerializer
     name = 'pilot-list'
     filter_fields = ('name', 'gender', 'races_count')
     search_fields = ('^name')
     ordering_fields = ('name', 'races_count')
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
 
 class PilotDetail(generics.RetrieveUpdateDestroyAPIView):
+    throttle_scope = 'pilots'
+    throttle_classes = (ScopedRateThrottle,)
     queryset = Pilot.objects.all()
     serializer_class = PilotSerializer
     name = 'pilot-detail'
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
 
 class CompetitionFilter(FilterSet):
